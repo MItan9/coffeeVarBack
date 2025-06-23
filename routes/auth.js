@@ -1,7 +1,7 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
 const { generateToken } = require("../utils/jwt");
-const { createUser, findUserByMail } = require("../database/userFunctions");
+const { createUser, findUserByMail } = require("../database/dbFunctions");
 
 const router = express.Router();
 
