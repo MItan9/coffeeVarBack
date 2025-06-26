@@ -3,7 +3,6 @@ const bcrypt = require("bcrypt");
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 require("dotenv").config();
-
 const { generateToken } = require("../utils/jwt");
 const { createUser, findUserByMail } = require("../database/dbFunctions");
 
