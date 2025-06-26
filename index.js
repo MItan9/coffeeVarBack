@@ -1,5 +1,6 @@
 const express = require("express");
 const authRoutes = require("./routes/auth");
+const resetPasswordRoutes = require("./routes/resetPassword");
 require("dotenv").config();
 const qrRoutes = require("./routes/qrcode");
 const passport = require("passport");
@@ -8,11 +9,12 @@ const cors = require("cors");
 
 const app = express();
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
 app.use(authRoutes);
+app.use(resetPasswordRoutes);
 app.use("/", qrRoutes);
 
 app.use(
