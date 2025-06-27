@@ -1,6 +1,8 @@
 const express = require("express");
 const authRoutes = require("./routes/auth");
-const resetPasswordRoutes = require("./routes/resetPassword");
+const resetPassword = require("./routes/resetPassword");
+const refreshToken = require("./routes/refreshToken");
+const logout = require("./routes/logout");
 require("dotenv").config();
 const qrRoutes = require("./routes/qrcode");
 const passport = require("passport");
@@ -11,10 +13,20 @@ const app = express();
 
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+// app.use(cors());
+
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 app.use(authRoutes);
-app.use(resetPasswordRoutes);
+app.use(resetPassword);
+app.use(refreshToken);
+app.use(logout);
 app.use("/", qrRoutes);
 
 app.use(
