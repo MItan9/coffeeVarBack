@@ -33,21 +33,13 @@ const findUserByMail = async (mail) => {
   return result.rows[0];
 };
 
-const generate6DigitCode = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-};
-
-const createOrUpdateQrCode = async (userId) => {
-  const code = generate6DigitCode();
-  console.log("Generated code:", code);
-  const expiresAt = new Date(Date.now() + 2 * 60 * 1000); // 2 минуты
-
+const createOrUpdateQrCode = async (userId, code, qrImage, expiresAt) => {
   await pool.query(
-    `INSERT INTO user_codes (user_id, plain_code, expires_at)
-     VALUES ($1, $2, $3)
+    `INSERT INTO user_codes (user_id, plain_code, qr_code, expires_at)
+     VALUES ($1, $2, $3, $4)
      ON CONFLICT (user_id)
-     DO UPDATE SET plain_code = $2, created_at = NOW(), expires_at = $3`,
-    [userId, code, expiresAt]
+     DO UPDATE SET plain_code = $2, qr_code = $3, created_at = NOW(), expires_at = $4`,
+    [userId, code, qrImage, expiresAt]
   );
 
   return code;
