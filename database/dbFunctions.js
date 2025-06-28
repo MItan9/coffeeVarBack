@@ -11,7 +11,7 @@ const createUser = async (
   tokenExpiresAt = null
 ) => {
   const result = await pool.query(
-    "INSERT INTO users (name, surname, mail, phone,  password,  role, reset_token, token_expires_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
+    "INSERT INTO users (name, surname, mail, phone,  password,  role, reset_token, token_expires_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)  RETURNING id, name, surname, mail, role",
     [
       username,
       userSurname,
@@ -85,6 +85,33 @@ const findUserByToken = async (token) => {
   return result.rows[0];
 };
 
+async function saveRefreshToken(userId, refreshToken) {
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  await pool.query(
+    `INSERT INTO refresh_tokens (user_id, token, expires_at)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (user_id)
+     DO UPDATE SET token = $2, expires_at = $3, created_at = CURRENT_TIMESTAMP`,
+    [userId, refreshToken, expiresAt]
+  );
+}
+
+async function findUserByRefreshToken(token) {
+  const res = await pool.query(
+    `SELECT users.id, users.name, users.role
+     FROM users
+     JOIN refresh_tokens ON users.id = refresh_tokens.user_id
+     WHERE refresh_tokens.token = $1`,
+    [token]
+  );
+  return res.rows[0];
+}
+
+const findUserById = async (id) => {
+  const result = await pool.query("SELECT * FROM users WHERE id = $1", [id]);
+  return result.rows[0];
+};
+
 module.exports = {
   createUser,
   findUserByMail,
@@ -93,4 +120,7 @@ module.exports = {
   insertResetToken,
   updatePassword,
   findUserByToken,
+  saveRefreshToken,
+  findUserByRefreshToken,
+  findUserById,
 };
