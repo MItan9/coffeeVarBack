@@ -85,7 +85,8 @@ const findUserByToken = async (token) => {
   return result.rows[0];
 };
 
-async function saveRefreshToken(userId, refreshToken, expiresAt = null) {
+async function saveRefreshToken(userId, refreshToken) {
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   await pool.query(
     `INSERT INTO refresh_tokens (user_id, token, expires_at)
      VALUES ($1, $2, $3)

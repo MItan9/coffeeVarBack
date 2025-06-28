@@ -8,6 +8,7 @@ const qrRoutes = require("./routes/qrcode");
 const passport = require("passport");
 const session = require("express-session");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use(
 );
 
 app.use(express.json());
+app.use(cookieParser());
 app.use(authRoutes);
 app.use(resetPassword);
 app.use(refreshToken);

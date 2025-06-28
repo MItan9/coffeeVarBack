@@ -6,8 +6,8 @@ const { findUserByRefreshToken } = require("../database/dbFunctions");
 const router = express.Router();
 
 // =============== REFRESH TOKEN ==================
-router.post("/token", async (req, res) => {
-  const { refreshToken } = req.body;
+router.post("/refresh-token", async (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
   if (!refreshToken)
     return res.status(401).json({ error: "No token provided" });
 

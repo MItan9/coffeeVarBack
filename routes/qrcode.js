@@ -1,19 +1,19 @@
 const express = require("express");
 const QRCode = require("qrcode");
 const { createOrUpdateQrCode } = require("../database/dbFunctions");
-const authenticateToken = require("../middleware/authenticateToken");
+const authenticateAccessToken = require("../middleware/authenticateAccessToken");
 
 const router = express.Router();
 
-router.get("/user/qrcode", authenticateToken, async (req, res) => {
+router.get("/user/qrcode", authenticateAccessToken, async (req, res) => {
   const userId = req.user.id;
+  console.log("User ID:", userId);
 
   try {
     const generate6DigitCode = () => {
       return Math.floor(100000 + Math.random() * 900000).toString();
     };
     const code = generate6DigitCode();
-    console.log("Generated code:", code);
     const expiresAt = new Date(Date.now() + 2 * 60 * 1000); // 2 минуты
 
     const qrImage = await QRCode.toDataURL(code);
