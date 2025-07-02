@@ -3,6 +3,7 @@ const authRoutes = require("./routes/auth");
 const resetPassword = require("./routes/resetPassword");
 const refreshToken = require("./routes/refreshToken");
 const logout = require("./routes/logout");
+const profileRoutes = require("./routes/profile");
 require("dotenv").config();
 const qrRoutes = require("./routes/qrcode");
 const passport = require("passport");
@@ -30,6 +31,7 @@ app.use(resetPassword);
 app.use(refreshToken);
 app.use(logout);
 app.use("/", qrRoutes);
+app.use(profileRoutes);
 
 app.use(
   session({ secret: "coffee_secret", resave: false, saveUninitialized: true })
