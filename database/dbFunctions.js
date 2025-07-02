@@ -128,6 +128,14 @@ const deleteUserById = async (userId) => {
   return result.rows[0];
 };
 
+const getUserCupsById = async (userId) => {
+  const result = await pool.query(
+    "SELECT cups_number FROM cups WHERE user_id = $1",
+    [userId]
+  );
+  return result.rows[0];
+};
+
 module.exports = {
   createUser,
   findUserByMail,
@@ -141,4 +149,5 @@ module.exports = {
   findUserById,
   updateUserFields,
   deleteUserById,
+  getUserCupsById,
 };
