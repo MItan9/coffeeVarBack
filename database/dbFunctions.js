@@ -112,6 +112,22 @@ const findUserById = async (id) => {
   return result.rows[0];
 };
 
+const updateUserFields = async (userId, updatedField) => {
+  const field = Object.keys(updatedField);
+  const value = Object.values(updatedField);
+
+  const result = await pool.query(
+    `UPDATE users SET ${field} = $1 WHERE id = $2 RETURNING ${field}`,
+    [...value, userId]
+  );
+  return result.rows[0];
+};
+
+const deleteUserById = async (userId) => {
+  const result = await pool.query("DELETE FROM users WHERE id = $1", [userId]);
+  return result.rows[0];
+};
+
 module.exports = {
   createUser,
   findUserByMail,
@@ -123,4 +139,6 @@ module.exports = {
   saveRefreshToken,
   findUserByRefreshToken,
   findUserById,
+  updateUserFields,
+  deleteUserById,
 };
