@@ -11,6 +11,8 @@ const passport = require("passport");
 const session = require("express-session");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const couponsRouter = require("./routes/coupons");
+
 
 const app = express();
 
@@ -34,6 +36,7 @@ app.use(logout);
 app.use("/", qrRoutes);
 app.use(profileRoutes);
 app.use(cupsRoutes);
+app.use(couponsRouter);
 
 app.use(
   session({ secret: "coffee_secret", resave: false, saveUninitialized: true })

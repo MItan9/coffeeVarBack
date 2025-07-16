@@ -136,6 +136,95 @@ const getUserCupsById = async (userId) => {
   return result.rows[0];
 };
 
+
+const getUserCoupons = async (userId) => {
+  const result = await pool.query(
+    `SELECT id, expires_at FROM coupones
+     WHERE user_id = $1 AND expires_at > NOW()
+     ORDER BY expires_at ASC`,
+    [userId]
+  );
+  return result.rows;
+};
+
+const addCouponToUser = async (userId) => {
+  const res = await pool.query(
+    `SELECT COUNT(*) FROM coupones 
+    WHERE user_id = $1 AND expires_at > NOW()`,
+    [userId]
+  );
+  
+const count = parseInt(res.rows[0]?.count ?? 0); 
+if (count >= 3) return false; // лимит достигнут
+console.log("Количество купонов:", count);
+
+
+  if (count >= 3) return false; // лимит достигнут
+
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 дней
+
+  const inserted = await pool.query(
+    `INSERT INTO coupones (user_id, created_at, expires_at)
+     VALUES ($1, NOW(), $2)
+     RETURNING id, expires_at`,
+    [userId, expiresAt]
+  );
+
+  return inserted.rows[0]; // можно возвращать новый купон, если нужно на фронте
+};
+
+const resetUserCups = async (userId) => {
+  await pool.query(
+    `UPDATE cups SET cups_number = 0 WHERE user_id = $1`,
+    [userId]
+  );
+};
+
+
+
+// const incrementCupAndReward = async (userId) => {
+//   // Убедимся, что строка в cups существует
+//   const exists = await pool.query(
+//     `SELECT 1 FROM cups WHERE user_id = $1`,
+//     [userId]
+//   );
+//   if (exists.rows.length === 0) {
+//     await pool.query(
+//       `INSERT INTO cups (user_id, cups_number) VALUES ($1, 0)`,
+//       [userId]
+//     );
+//   }
+
+//   // Увеличиваем cups_number
+//   const updated = await pool.query(
+//     `UPDATE cups
+//      SET cups_number = cups_number + 1
+//      WHERE user_id = $1
+//      RETURNING cups_number`,
+//     [userId]
+//   );
+
+//   const cups = updated.rows[0]?.cups_number;
+//   if (cups === undefined) throw new Error("cups_number не получено");
+
+//   // Проверка на выдачу купона
+//   let couponAdded = false;
+//   if (cups >= 6) {
+//     const addedCoupon = await addCouponToUser(userId); // добавление с лимитом
+//     if (addedCoupon) {
+//       await resetUserCups(userId);
+//       couponAdded = true;
+//     }
+//   }
+
+//   return {
+//     cups: couponAdded ? 0 : cups,
+//     couponAdded
+//   };
+// };
+
+
+
 module.exports = {
   createUser,
   findUserByMail,
@@ -150,4 +239,7 @@ module.exports = {
   updateUserFields,
   deleteUserById,
   getUserCupsById,
+  getUserCoupons,
+  addCouponToUser,
+  resetUserCups,
 };
