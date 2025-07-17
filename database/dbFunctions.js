@@ -26,6 +26,21 @@ const createUser = async (
   return result.rows[0];
 };
 
+const createUserCups = async (userId, cupsNumber = 0) => {
+  const result = await pool.query(
+    "INSERT INTO cups (user_id, cups_number) VALUES ($1, $2) RETURNING id, user_id, cups_number",
+    [userId, cupsNumber]
+  );
+  return result.rows[0];
+};
+const createUserCoupones = async (userId, couponeNumber = 0) => {
+  const result = await pool.query(
+    "INSERT INTO coupones (user_id, coupons_number) VALUES ($1, $2) RETURNING id, user_id, coupons_number",
+    [userId, couponeNumber]
+  );
+  return result.rows[0];
+};
+
 const findUserByMail = async (mail) => {
   const result = await pool.query("SELECT * FROM users WHERE mail = $1", [
     mail,
@@ -135,6 +150,97 @@ const getUserCupsById = async (userId) => {
   );
   return result.rows[0];
 };
+const getUserByCode = async (code) => {
+  const result = await pool.query(
+    `SELECT 
+  u.name,
+  u.surname,
+  c.cups_number,
+  (
+    SELECT COUNT(*)::int
+    FROM coupones 
+    WHERE user_id = uc.user_id
+  ) AS coupons_number
+FROM user_codes uc
+LEFT JOIN users u ON u.id = uc.user_id
+LEFT JOIN cups c ON uc.user_id = c.user_id
+LEFT JOIN coupones cpn ON uc.user_id = cpn.user_id
+WHERE uc.plain_code = $1`,
+    [code]
+  );
+  return result.rows[0];
+};
+
+const updateCupsNumber = async (userId, cupsDelta) => {
+  const result = await pool.query(
+    "UPDATE cups SET cups_number = GREATEST(cups_number + $1, 0) WHERE user_id = $2 RETURNING cups_number",
+    [cupsDelta, userId]
+  );
+
+  if (result.rowCount > 0) {
+    return { success: true, cups_number: result.rows[0].cups_number };
+  } else {
+    return { success: false, message: "Пользователь не найден" };
+  }
+};
+const updateCouponsNumber = async (userId, couponsDelta) => {
+  try {
+    if (couponsDelta < 0) {
+      // Удаляем столько строк, сколько отрицательное значение (но не больше текущих купонов)
+      const deleteCount = Math.abs(couponsDelta);
+
+      const deleteResult = await pool.query(
+        `DELETE FROM coupones 
+         WHERE user_id = $1 
+         AND id IN (
+           SELECT id FROM coupones 
+           WHERE user_id = $1 
+           ORDER BY expires_at ASC 
+           LIMIT $2
+         )
+         RETURNING *`,
+        [userId, deleteCount]
+      );
+
+      return {
+        success: true,
+        removed_coupons_number: Math.max(0, deleteResult.rowCount),
+      };
+    } else {
+      for (let i = 0; i < couponsDelta; i++) {
+        await pool.query(
+          `INSERT INTO coupones (user_id, created_at, expires_at)
+           VALUES ($1, NOW(), NOW() + INTERVAL '1 month')`,
+          [userId]
+        );
+      }
+
+      const countResult = await pool.query(
+        `SELECT COUNT(*) FROM coupones WHERE user_id = $1`,
+        [userId]
+      );
+
+      return {
+        success: true,
+        coupons_number: parseInt(countResult.rows[0].count),
+      };
+    }
+  } catch (error) {
+    console.error("Ошибка при обновлении купонов:", error);
+    return {
+      success: false,
+      message: "Ошибка при обновлении купонов",
+    };
+  }
+};
+
+const getUserIdByCode = async (code) => {
+  const result = await pool.query(
+    "SELECT u.id FROM user_codes uc LEFT JOIN users u ON u.id = uc.user_id WHERE plain_code = $1",
+    [code]
+  );
+  return result.rows[0];
+};
 
 module.exports = {
   createUser,
@@ -150,4 +256,10 @@ module.exports = {
   updateUserFields,
   deleteUserById,
   getUserCupsById,
+  getUserByCode,
+  createUserCups,
+  createUserCoupones,
+  updateCupsNumber,
+  getUserIdByCode,
+  updateCouponsNumber,
 };

@@ -13,6 +13,8 @@ const {
   findUserByMail,
   saveRefreshToken,
   findUserByRefreshToken,
+  createUserCups,
+  createUserCoupones,
 } = require("../database/dbFunctions");
 
 const router = express.Router();
@@ -38,6 +40,8 @@ router.post("/register", async (req, res) => {
       hashedPassword,
       role
     );
+    await createUserCups(userData.id);
+    await createUserCoupones(userData.id);
 
     const user = {
       id: userData.id,

@@ -1,6 +1,10 @@
 const express = require("express");
 const authenticateAccessToken = require("../middleware/authenticateAccessToken");
-const { getUserCupsById } = require("../database/dbFunctions");
+const {
+  getUserCupsById,
+  getUserIdByCode,
+  deleteCups,
+} = require("../database/dbFunctions");
 
 const router = express.Router();
 
