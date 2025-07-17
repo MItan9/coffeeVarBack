@@ -1,6 +1,6 @@
 const express = require("express");
 const authenticateAccessToken = require("../middleware/authenticateAccessToken");
-const { getUserCoupons, addCouponToUser } = require("../database/dbFunctions");
+const { getUserCoupons, addCouponToUser, resetUserCups } = require("../database/dbFunctions");
 
 const router = express.Router();
 
@@ -15,11 +15,12 @@ router.get("/user/coupons", authenticateAccessToken, async (req, res) => {
   }
 });
 
-router.post("/user/add-coupon", authenticateAccessToken, async (req, res) => {
+router.post("/user/add-coupon-delete-cups", authenticateAccessToken, async (req, res) => {
   const userId = req.user.id;
   try {
     const addCoupon = await addCouponToUser(userId);
-    res.json({ addCoupon });
+    const resetCups = await resetUserCups(userId); // сброс чашек после добавления купона
+    res.json({ addCoupon, resetCups });
   } catch (err) {
     console.error("Ошибка добавления купона:", err);
     res.status(500).json({ error: "Ошибка добавления купона:" });
