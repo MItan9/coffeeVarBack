@@ -7,12 +7,16 @@ const profileRoutes = require("./routes/profile");
 const cupsRoutes = require("./routes/cups");
 require("dotenv").config();
 const qrRoutes = require("./routes/qrcode");
+const baristaRoutes = require("./routes/barista");
 const passport = require("passport");
 const session = require("express-session");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const couponsRouter = require("./routes/coupons");
 
+
+require("./cron/deleteExpiredCodes");
+require("./cron/cleanupExpired");
 
 const app = express();
 
@@ -36,7 +40,9 @@ app.use(logout);
 app.use("/", qrRoutes);
 app.use(profileRoutes);
 app.use(cupsRoutes);
+app.use(baristaRoutes);
 app.use(couponsRouter);
+
 
 app.use(
   session({ secret: "coffee_secret", resave: false, saveUninitialized: true })
