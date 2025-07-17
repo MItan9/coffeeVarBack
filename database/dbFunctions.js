@@ -173,57 +173,48 @@ console.log("Количество купонов:", count);
   return inserted.rows[0]; // можно возвращать новый купон, если нужно на фронте
 };
 
-const resetUserCups = async (userId) => {
-  await pool.query(
-    `UPDATE cups SET cups_number = 0 WHERE user_id = $1`,
+const processCupsReward = async (userId, newCupsCount) => {
+  // получаем текущее число чашек
+  const result = await pool.query(
+    "SELECT cups_number FROM cups WHERE user_id = $1",
     [userId]
   );
+  const current = result.rows[0]?.cups_number ?? 0;
+
+  const total = current + newCupsCount;
+  const couponsToAdd = Math.floor(total / 6);
+  const cupsRemaining = total % 6;
+
+  // обновляем чашки
+  await pool.query(
+    "UPDATE cups SET cups_number = $1 WHERE user_id = $2",
+    [cupsRemaining, userId]
+  );
+
+  const coupons = [];
+  for (let i = 0; i < couponsToAdd; i++) {
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const inserted = await pool.query(
+      `INSERT INTO coupones (user_id, created_at, expires_at)
+       VALUES ($1, NOW(), $2)
+       RETURNING id, expires_at`,
+      [userId, expiresAt]
+    );
+    coupons.push(inserted.rows[0]);
+  }
+
+  return {
+    newCups: cupsRemaining,
+    couponsAdded: coupons.length,
+    coupons,
+  };
 };
 
-
-
-// const incrementCupAndReward = async (userId) => {
-//   // Убедимся, что строка в cups существует
-//   const exists = await pool.query(
-//     `SELECT 1 FROM cups WHERE user_id = $1`,
-//     [userId]
-//   );
-//   if (exists.rows.length === 0) {
-//     await pool.query(
-//       `INSERT INTO cups (user_id, cups_number) VALUES ($1, 0)`,
-//       [userId]
-//     );
-//   }
-
-//   // Увеличиваем cups_number
-//   const updated = await pool.query(
-//     `UPDATE cups
-//      SET cups_number = cups_number + 1
-//      WHERE user_id = $1
-//      RETURNING cups_number`,
-//     [userId]
-//   );
-
-//   const cups = updated.rows[0]?.cups_number;
-//   if (cups === undefined) throw new Error("cups_number не получено");
-
-//   // Проверка на выдачу купона
-//   let couponAdded = false;
-//   if (cups >= 6) {
-//     const addedCoupon = await addCouponToUser(userId); // добавление с лимитом
-//     if (addedCoupon) {
-//       await resetUserCups(userId);
-//       couponAdded = true;
-//     }
-//   }
-
-//   return {
-//     cups: couponAdded ? 0 : cups,
-//     couponAdded
-//   };
-// };
-
-
+const resetUserCups = async (userId) => {
+  const result = await pool.query( `UPDATE cups SET cups_number = GREATEST(cups_number - 6, 0) WHERE user_id = $1 RETURNING cups_number;
+`, [userId]);
+  return result.rows[0];
+}
 
 module.exports = {
   createUser,
@@ -241,5 +232,6 @@ module.exports = {
   getUserCupsById,
   getUserCoupons,
   addCouponToUser,
-  resetUserCups,
+  processCupsReward,
+  resetUserCups
 };
