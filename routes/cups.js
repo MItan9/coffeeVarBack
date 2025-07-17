@@ -1,7 +1,14 @@
 const express = require("express");
 const authenticateAccessToken = require("../middleware/authenticateAccessToken");
+
+const {
+  getUserCupsById,
+  resetUserCups
+} = require("../database/dbFunctions");
+
 const { getUserCupsById, resetUserCups } = require("../database/dbFunctions");
 const { processCupsReward } = require("../database/dbFunctions");
+
 
 const router = express.Router();
 
