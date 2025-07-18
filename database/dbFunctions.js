@@ -242,7 +242,6 @@ const getUserIdByCode = async (code) => {
   return result.rows[0];
 };
 
-
 const getUserCoupons = async (userId) => {
   const result = await pool.query(
     `SELECT id, expires_at FROM coupones
@@ -259,11 +258,10 @@ const addCouponToUser = async (userId) => {
     WHERE user_id = $1 AND expires_at > NOW()`,
     [userId]
   );
-  
-const count = parseInt(res.rows[0]?.count ?? 0); 
-if (count >= 3) return false; // лимит достигнут
-console.log("Количество купонов:", count);
 
+  const count = parseInt(res.rows[0]?.count ?? 0);
+  if (count >= 3) return false; // лимит достигнут
+  console.log("Количество купонов:", count);
 
   if (count >= 3) return false; // лимит достигнут
 
@@ -279,48 +277,14 @@ console.log("Количество купонов:", count);
   return inserted.rows[0]; // можно возвращать новый купон, если нужно на фронте
 };
 
-const processCupsReward = async (userId, newCupsCount) => {
-  // получаем текущее число чашек
+const resetUserCups = async (userId) => {
   const result = await pool.query(
-    "SELECT cups_number FROM cups WHERE user_id = $1",
+    `UPDATE cups SET cups_number = GREATEST(cups_number - 6, 0) WHERE user_id = $1 RETURNING cups_number;
+`,
     [userId]
   );
-  const current = result.rows[0]?.cups_number ?? 0;
-
-  const total = current + newCupsCount;
-  const couponsToAdd = Math.floor(total / 6);
-  const cupsRemaining = total % 6;
-
-  // обновляем чашки
-  await pool.query(
-    "UPDATE cups SET cups_number = $1 WHERE user_id = $2",
-    [cupsRemaining, userId]
-  );
-
-  const coupons = [];
-  for (let i = 0; i < couponsToAdd; i++) {
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    const inserted = await pool.query(
-      `INSERT INTO coupones (user_id, created_at, expires_at)
-       VALUES ($1, NOW(), $2)
-       RETURNING id, expires_at`,
-      [userId, expiresAt]
-    );
-    coupons.push(inserted.rows[0]);
-  }
-
-  return {
-    newCups: cupsRemaining,
-    couponsAdded: coupons.length,
-    coupons,
-  };
-};
-
-const resetUserCups = async (userId) => {
-  const result = await pool.query( `UPDATE cups SET cups_number = GREATEST(cups_number - 6, 0) WHERE user_id = $1 RETURNING cups_number;
-`, [userId]);
   return result.rows[0];
-}
+};
 
 module.exports = {
   createUser,
@@ -344,9 +308,5 @@ module.exports = {
   updateCouponsNumber,
   getUserCoupons,
   addCouponToUser,
-resetCup,
-  processCupsReward,
-  resetUserCups
-
-
+  resetUserCups,
 };
